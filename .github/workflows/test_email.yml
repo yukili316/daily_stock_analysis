@@ -36,7 +36,27 @@ jobs:
           from src.notification_sender.email_sender import EmailSender
 
           now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-          sender = EmailSender(get_config())
+          config = get_config()
+          fields = {
+              "EMAIL_SENDER": config.email_sender or "",
+              "EMAIL_PASSWORD": config.email_password or "",
+          }
+          fields.update({
+              f"EMAIL_RECEIVERS[{index}]": receiver
+              for index, receiver in enumerate(config.email_receivers)
+          })
+          for field, value in fields.items():
+              try:
+                  value.encode("ascii")
+              except UnicodeEncodeError:
+                  raise SystemExit(f"{field} 包含非 ASCII 字符，请删除中文标点、说明文字或引号")
+          if "@" not in fields["EMAIL_SENDER"]:
+              raise SystemExit("EMAIL_SENDER 不是有效邮箱地址")
+          for index, receiver in enumerate(config.email_receivers):
+              if "@" not in receiver:
+                  raise SystemExit(f"EMAIL_RECEIVERS[{index}] 不是有效邮箱地址")
+
+          sender = EmailSender(config)
           sent = sender.send_to_email(
               "# 邮件配置测试\n\n"
               "GitHub Actions 已成功连接 SMTP 服务并发送此邮件。\n\n"

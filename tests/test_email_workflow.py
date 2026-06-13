@@ -26,7 +26,9 @@ def test_email_workflow_is_manual_and_isolated() -> None:
     }
 
     script = send_step["run"]
-    assert "EmailSender(get_config())" in script
+    assert "config = get_config()" in script
+    assert "EmailSender(config)" in script
     assert "send_to_email(" in script
+    assert 'value.encode("ascii")' in script
     assert "main.py" not in raw
     assert "STOCK_LIST" not in raw
